@@ -33,21 +33,18 @@ namespace Конфигуратор
         {
 
             ConnectCOM.Items.Clear();
-            // получение списка СОМ портов
             string[] portnames = SerialPort.GetPortNames();
-            // проверка доступных СОМ портов
             if (portnames.Length == 0)
             {
                 MessageBox.Show("COM порты не найдены");
             }
             foreach (string portName in portnames)
-            // для каждого из доступных портов
             {
-                ConnectCOM.Items.Add(portName); // добавление порта в выпадающий список
+                ConnectCOM.Items.Add(portName);
                 if (portnames[0] != null)
                 {
-                    ConnectCOM.SelectedItem = portnames[0]; // выбор добавленного порта
-                    //ButtonConnect.Visibility = Visibility.Collapsed; // активация кнопки "Подключить порт"
+                    ConnectCOM.SelectedItem = portnames[0];
+                    ButtonConnect.IsEnabled = true;
                 }
             }
         }
@@ -73,13 +70,12 @@ namespace Конфигуратор
                     {
                         sensor.Read();
                         Output.Text += $"Адрес: {sensor.State.SensorAddress}\n";
-                        Output.Text += $"Частота преобразования АЦП: {Converter.Convert(sensor.State.AdcSamplingRate)}\n";
+                        Output.Text += $"Частота преобразования АЦП: {sensor.State.AdcSamplingRate}\n";
                         Output.Text += $"Номер внутреннего устройства: {sensor.State.Range}\n";
-                        Output.Text += $"Размерность выходной величины: {DimensionConverter.Default.Convert(sensor.State.Dimension)}\n";
-                        Output.Text += $"Постоянная демпфирования: {DampingConstantConverter.Default.Convert(sensor.State.DampingConstant)}\n";
-                        Output.Text += $"Скорость обмена по линии связи: {ExchangeRateConverter.Default.Convert(sensor.State.ExchangeRate)}\n";
-                        Output.Text += $"Паритет: {ParityConverter.Default.Convert(sensor.State.Parity)}\n\n";
-
+                        Output.Text += $"Размерность выходной величины: {sensor.State.Dimension}\n";
+                        Output.Text += $"Постоянная демпфирования: {sensor.State.DampingConstant}\n";
+                        Output.Text += $"Скорость обмена по линии связи: {sensor.State.ExchangeRate}\n";
+                        Output.Text += $"Паритет: {sensor.State.Parity}\n\n";
                     }
                     catch (Exception ex)
                     {
@@ -99,7 +95,13 @@ namespace Конфигуратор
             WriteDimension.Click += WriteDimension_Click;
             sensor.IsConnectedChanged.StartWith(sensor.IsConnected).Subscribe(UpdateViewStabe);
             UpdatePressure.Click += UpdatePressure_Click;
-            
+            sensor.StateChanged.StartWith(sensor.State).Subscribe(OnStateChanged);
+            ButtonConnect.IsEnabled = false;
+        }
+
+        private void OnStateChanged(SensorState state)
+        {
+            LabelDimension.Content = state.IsValid ? state.Dimension.ToString() : "-";
         }
 
         private void UpdateViewStabe(bool isConnected)
@@ -107,7 +109,7 @@ namespace Конфигуратор
             ButtonConnect.Content = isConnected ? "Отключение" : "Подключение";
             WriteDimension.IsEnabled = isConnected;
             Restart.IsEnabled = isConnected;
-
+            UpdatePressure.IsEnabled = isConnected;
         }
 
         private void WriteDimension_Click(object sender, RoutedEventArgs e)
@@ -127,10 +129,12 @@ namespace Конфигуратор
         private IModbusSerialMaster modbus;
         private SerialPort serialPort;
         private readonly Subject<bool> isConnectedChanged = new Subject<bool>();
+        private readonly Subject<SensorState> stateChanged = new Subject<SensorState>();
+        private SensorState state;
 
         public Sensor()
         {
-            State = new SensorState();
+            State = SensorState.Default;
         }
 
         public bool IsConnected { get; private set; }
@@ -164,16 +168,22 @@ namespace Конфигуратор
             }
 
             var result = modbus.ReadHoldingRegisters(1, 0, 0x39);
-            State.AdcSamplingRate = ByteManipulater.GetMSB(result[0]);
-            State.SensorAddress = ByteManipulater.GetLSB(result[0]);
-            State.Range = ByteManipulater.GetMSB(result[1]);
-            State.Dimension = ByteManipulater.GetLSB(result[1]);
-            State.DampingConstant = ByteManipulater.GetMSB(result[2]);
-            State.ExchangeRate = ByteManipulater.GetMSB(result[3]);
-            State.Parity = ByteManipulater.GetLSB(result[3]);
+            var dto = new SensorStateDto
+            {
+                AdcSamplingRate = ByteManipulater.GetMSB(result[0]),
+                SensorAddress = ByteManipulater.GetLSB(result[0]),
+                Range = ByteManipulater.GetMSB(result[1]),
+                Dimension = ByteManipulater.GetLSB(result[1]),
+                DampingConstant = ByteManipulater.GetMSB(result[2]),
+                ExchangeRate = ByteManipulater.GetMSB(result[3]),
+                Parity = ByteManipulater.GetLSB(result[3])
+            };
+            State = new SensorState(dto);
         }
 
-        public SensorState State { get; }
+        public SensorState State { get => state; private set { state = value; stateChanged.OnNext(value); } }
+        public IObservable<bool> IsConnectedChanged => isConnectedChanged.AsObservable();
+        public IObservable<SensorState> StateChanged => stateChanged.AsObservable();
 
         public void Restart()
         { 
@@ -186,8 +196,8 @@ namespace Конфигуратор
             var original = modbus.ReadHoldingRegisters(1, 1, 1);
             ushort modifed = ByteManipulater.ChangeLSB(original[0], byteValue);
             modbus.WriteMultipleRegisters(1, 1, new ushort[] { modifed });
+            Read();
         }
-        public IObservable<bool> IsConnectedChanged => isConnectedChanged.AsObservable();
 
         public float ReadPressure()
         {
@@ -420,7 +430,7 @@ namespace Конфигуратор
         }
     }
 
-    public class SensorState
+    public class SensorStateDto
     {
         public byte SensorAddress { get; set; }
         public byte AdcSamplingRate { get; set; }
@@ -429,5 +439,50 @@ namespace Конфигуратор
         public byte DampingConstant { get; set; }
         public byte ExchangeRate { get; set; }
         public byte Parity { get; set; }
+    }
+
+    public class SensorState 
+    {
+        public byte SensorAddress { get; }
+        public AdcSamplingRate AdcSamplingRate { get; }
+        public byte Range { get; }
+        public Dimension Dimension { get; }
+        public DampingConstant DampingConstant { get;}
+        public ExchangeRate ExchangeRate { get; }
+        public Parity Parity { get; }
+        public static SensorState Default { get; } = new SensorState();
+        public bool IsValid { get; }
+
+        public SensorState(byte sensorAddress, byte adcSamplingRate, byte range, byte dimension, byte dampingConstant, byte exchangeRate, byte parity)
+        {
+            throw new NotImplementedException();
+        }
+        public SensorState(SensorStateDto dto)
+        {
+            if (dto is null)
+            {
+                throw new ArgumentNullException(nameof(dto));
+            }
+            SensorAddress = dto.SensorAddress;
+            AdcSamplingRate = Converter.Convert(dto.AdcSamplingRate);
+            Range = dto.Range;
+            Dimension = DimensionConverter.Default.Convert(dto.Dimension);
+            DampingConstant = DampingConstantConverter.Default.Convert(dto.DampingConstant);
+            ExchangeRate = ExchangeRateConverter.Default.Convert(dto.ExchangeRate);
+            Parity = ParityConverter.Default.Convert(dto.Parity);
+            IsValid = true;
+        }
+
+        public SensorState()
+        {
+            SensorAddress = 1;
+            AdcSamplingRate = AdcSamplingRate.Hz8;
+            Range = 0;
+            Dimension = Dimension.kPascal;
+            DampingConstant = DampingConstant.sec0;
+            ExchangeRate = ExchangeRate.bitonsec9600;
+            Parity = Parity.parity;
+            IsValid = false;
+        }
     }
 }
