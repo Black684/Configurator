@@ -2,6 +2,7 @@
 using NModbus.Serial;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.IO.Ports;
 using System.Linq;
 using System.Reactive.Linq;
@@ -60,14 +61,13 @@ namespace Конфигуратор
 
             void ButtonConnection(object sender, EventArgs e)
             {
-                if (isConnected == false)
+                if (sensor.IsConnected == false)
                 {
                     string selectedPort = (String)ConnectCOM.SelectedItem;
-                    sensor.Connect(selectedPort);
-                    isConnected = true;
-                    Output.Text += "Соединение установлено.\n\n";
                     try
                     {
+                        sensor.Connect(selectedPort);
+                        Output.Text += "Соединение установлено.\n\n";
                         sensor.Read();
                         Output.Text += $"Адрес: {sensor.State.SensorAddress}\n";
                         Output.Text += $"Частота преобразования АЦП: {sensor.State.AdcSamplingRate}\n";
@@ -85,12 +85,11 @@ namespace Конфигуратор
                 else
                 {
                     sensor.Disconnect();
-                    isConnected = false;
                 }
             }
 
             ButtonConnect.Click += ButtonConnection;
-            Dimensions.ItemsSource = Enum.GetValues(typeof(Dimension));
+            Dimensions.ItemsSource = Enum.GetValues(typeof(Dimension)).Cast<Dimension>().Select(DimensionToStringConverter.Default.Convert);
             Dimensions.SelectedIndex = 0;
             WriteDimension.Click += WriteDimension_Click;
             sensor.IsConnectedChanged.StartWith(sensor.IsConnected).Subscribe(UpdateViewStabe);
@@ -101,7 +100,7 @@ namespace Конфигуратор
 
         private void OnStateChanged(SensorState state)
         {
-            LabelDimension.Content = state.IsValid ? state.Dimension.ToString() : "-";
+            LabelDimension.Content = state.IsValid ? DimensionToStringConverter.Default.Convert(state.Dimension) : "-";
         }
 
         private void UpdateViewStabe(bool isConnected)
@@ -114,7 +113,7 @@ namespace Конфигуратор
 
         private void WriteDimension_Click(object sender, RoutedEventArgs e)
         {
-            sensor.Write((Dimension)Dimensions.SelectedItem);
+            sensor.Write(DimensionToStringConverter.Default.Convert((string)Dimensions.SelectedItem));
         }
 
         private void UpdatePressure_Click(object sender, RoutedEventArgs e)
@@ -148,6 +147,11 @@ namespace Конфигуратор
             var adapter = new SerialPortAdapter(serialPort);
             adapter.ReadTimeout = 1000;
             modbus = factory.CreateRtuMaster(adapter);
+            var checking = modbus.ReadHoldingRegisters(1, 0x20, 1);
+            if (ByteManipulater.GetMSB(checking[0]) != 0x11)
+            {
+                throw new IOException("Найденное устройство не является датчиком.");
+            }
             IsConnected = true;
             isConnectedChanged.OnNext(true);
         }
@@ -409,6 +413,39 @@ namespace Конфигуратор
         }
 
         public static ParityConverter Default { get; } = new ParityConverter();
+    }
+
+    public class DimensionToStringConverter
+    {
+        private readonly Dictionary<string, Dimension> map;
+        private readonly Dictionary<Dimension, string> map2;
+
+        public DimensionToStringConverter()
+        {
+            map = new Dictionary<string, Dimension>
+            {
+                {"%", Dimension.Percent},
+                {"Па", Dimension.Pascal},
+                {"кПа", Dimension.kPascal},
+                {"МПа", Dimension.MPascal},
+                {"кг*с/см^2", Dimension.kgsoncm2},
+                {"кг*с/м^2", Dimension.kgsonm2},
+            };
+            map2 = map.ToDictionary(x => x.Value, x => x.Key);
+        }
+
+        public Dimension Convert(string value)
+        {
+            return map[value];
+        }
+
+        public string Convert(Dimension value)
+        {
+            return map2[value];
+        }
+
+        public static DimensionToStringConverter Default { get; } = new DimensionToStringConverter();
+
     }
 
     public class ByteManipulater

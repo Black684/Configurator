@@ -46,10 +46,10 @@
             </ScrollViewer>
             <Label Content="Давление" HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Column="0" Grid.Row="5" Margin="10, 10"/>
             <Border BorderBrush="#bbb" BorderThickness="1" CornerRadius="5" Background="Gainsboro" Grid.Column="1" Grid.Row="5" Margin="10, 10">
-                <Label Name="PressureValue"  Content="Label" HorizontalAlignment="Center" VerticalAlignment="Top"/>
+                <Label Name="PressureValue"  Content=" " HorizontalAlignment="Center" VerticalAlignment="Top"/>
             </Border>
             <Label  Name="LabelDimension"  Content="Размерность" HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Column="2" Grid.Row="5" Margin="10, 10"/>
-            <Button Name="UpdatePressure" Content="Обновить" HorizontalAlignment="Left" VerticalAlignment="Top" Height="24" Width="176" Grid.Column="3" Grid.Row="5" Margin="10, 10"/>
+            <Button Name="UpdatePressure" Content="Обновить"  VerticalAlignment="Top" Height="24" Grid.Column="3" Grid.Row="5" Margin="10, 10"/>
         </Grid>
     </Grid>
 </Window>
