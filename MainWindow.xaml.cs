@@ -2,6 +2,7 @@
 using NModbus.Serial;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.IO.Ports;
 using System.Linq;
@@ -96,6 +97,33 @@ namespace Конфигуратор
             UpdatePressure.Click += UpdatePressure_Click;
             sensor.StateChanged.StartWith(sensor.State).Subscribe(OnStateChanged);
             ButtonConnect.IsEnabled = false;
+            AddressButton.Click += AddressButton_Click;
+        }
+
+        private void AddressButton_Click(object sender, RoutedEventArgs e)
+        {
+            var str = AddressTextBox.Text;
+            var isHex = str.Contains("0x");
+            if(isHex)
+            {
+                str = str.Replace("0x", "");
+            }
+            var numberStyle = isHex ? NumberStyles.HexNumber : NumberStyles.Number;
+            var formatProvider = CultureInfo.CurrentCulture;
+            if (!ushort.TryParse(str, numberStyle, formatProvider, out var address))
+            {
+                MessageBox.Show("Адрес должен быть целым числом.");
+                return;
+            }
+            try
+            {
+                var readRegister = sensor.ReadRegister(address);
+                MessageBox.Show($"Регистр: {readRegister}");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Данный регистр не входит в необходимый диапазон.\n{ex}");
+            }
         }
 
         private void OnStateChanged(SensorState state)
@@ -212,6 +240,11 @@ namespace Конфигуратор
             bytes[1] = ByteManipulater.GetMSB(byteValue[1]);
             bytes[0] = ByteManipulater.GetLSB(byteValue[1]);
             return BitConverter.ToSingle(bytes, 0);
+        }
+
+        public ushort ReadRegister(ushort address)
+        {
+            return modbus.ReadHoldingRegisters(1, address, 1)[0];
         }
     }
 
