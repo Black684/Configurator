@@ -11,7 +11,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="auto"/>
             <RowDefinition Height="auto"/>
-            <RowDefinition Height="50"/>
+            <RowDefinition Height="40"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="40"/>
@@ -28,6 +28,7 @@
                         <RowDefinition Height="auto"/>
                         <RowDefinition Height="auto"/>
                         <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="auto"/>
@@ -35,39 +36,49 @@
                         <ColumnDefinition Width="auto"/>
                         <ColumnDefinition Width="auto"/>
                     </Grid.ColumnDefinitions>
-                    <ComboBox Name="ConnectCOM" Grid.Column="1" Grid.Row="3" Grid.ColumnSpan="2" Margin="10, 10"/>
-                    <Button Content="Подключение" Name="ButtonConnect" Grid.Column="3" Grid.Row="3" Margin="10, 10"/>
-                    <Button Content="Найти" Name="ButtonSearch" Height="23" VerticalAlignment="Top" Grid.Column="1" Grid.Row="2" Margin="10, 10"/>
-                    <Button Name="Restart" Content="Перезагрузка" Grid.Column="2" Grid.Row="2" Margin="10, 10"/>
-                    <ComboBox Name="Dimensions" Grid.Column="1" Grid.Row="4" Grid.ColumnSpan="2" Margin="10, 10"/>
-                    <Button Name="WriteDimension" Content="Записать" Grid.Column="3" Grid.Row="4" Margin="10, 10"/>
-                    <Label Content="Размерность" Grid.Column="0" Grid.Row="4" Margin="10, 10"/>
-                    <Label Content="Порт" Grid.Column="0" Grid.Row="3" Margin="10, 10"/>
+                    
+                    <ComboBox Name="ConnectCOM" Grid.Column="1" Grid.Row="3" Grid.ColumnSpan="2" Margin="10"/>
+                    <Button Content="Подключение" Name="ButtonConnect" Grid.Column="3" Grid.Row="3" Margin="10"/>
+                    <Button Content="Найти" Name="ButtonSearch" Height="23" VerticalAlignment="Top" Grid.Column="1" Grid.Row="2" Margin="10"/>
+                    <Button Name="Restart" Content="Перезагрузка" Grid.Column="2" Grid.Row="2" Margin="10"/>
+                    <ComboBox Name="Dimensions" Grid.Column="1" Grid.Row="4" Grid.ColumnSpan="2" Margin="10"/>
+                    <Button Name="WriteDimension" Content="Записать" Grid.Column="3" Grid.Row="4" Margin="10"/>
+                    <Label Content="Размерность" Grid.Column="0" Grid.Row="4" Margin="10"/>
+                    <Label Content="Порт" Grid.Column="0" Grid.Row="3" Margin="10"/>
                     <ScrollViewer  Background="#fafafa" Grid.Column="1" Grid.Row="0" Grid.ColumnSpan="3" Grid.RowSpan="2" Height="250" Width="550" Margin="50, 40, 50, 30">
                         <TextBlock Name="Output" TextWrapping="Wrap" VerticalAlignment="Top"/>
                     </ScrollViewer>
-                    <Label Content="Давление" HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Column="0" Grid.Row="5" Margin="10, 10"/>
-                    <Border BorderBrush="#bbb" BorderThickness="1" CornerRadius="5" Background="Gainsboro" Grid.Column="1" Grid.Row="5" Margin="10, 10">
+
+                    <Button Name="ReadButton" Content="Чтение" Grid.Column="3" Grid.Row="2" Margin="10"/>
+
+                    <Label Content="Давление" HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Column="0" Grid.Row="5" Margin="10"/>
+                    <Border BorderBrush="#bbb" BorderThickness="1" CornerRadius="5" Background="Gainsboro" Grid.Column="1" Grid.Row="5" Margin="10">
                         <Label Name="PressureValue"  Content=" " HorizontalAlignment="Center" VerticalAlignment="Top"/>
                     </Border>
-                    <Label  Name="LabelDimension"  Content="Размерность" HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Column="2" Grid.Row="5" Margin="10, 10"/>
-                    <Button Name="UpdatePressure" Content="Обновить"  VerticalAlignment="Top" Height="24" Grid.Column="3" Grid.Row="5" Margin="10, 10"/>
+                    <Label  Name="LabelDimension"  Content="Размерность" HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Column="2" Grid.Row="5" Margin="10"/>
+                    <Button Name="UpdatePressure" Content="Обновить"  VerticalAlignment="Top" Height="24" Grid.Column="3" Grid.Row="5" Margin="10"/>
                 </Grid>
             </TabItem>
-            <TabItem Header="Tests" HorizontalAlignment="Center" Width="38">
+            <TabItem Header="Tests" HorizontalAlignment="Center" Width="38" Height="20" VerticalAlignment="Top">
                 <Grid  Grid.Row="1" Grid.Column="1"  Width="751" Height="500" >
                     <Grid.RowDefinitions>
                         <RowDefinition Height="auto"/>
                         <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="auto"/>
                         <ColumnDefinition Width="auto"/>
                         <ColumnDefinition Width="auto"/>
                     </Grid.ColumnDefinitions>
-                    <Label Content="Адрес" Grid.Row="0" Grid.Column="0" Margin="150 30 30 30"/>
-                    <TextBox Name="AddressTextBox" Width="200"  Grid.Row="0" Grid.Column="1" Margin="30"/>
-                    <Button Name="AddressButton" Width="100" Content="Считать" Grid.Row="0" Grid.Column="2" Margin="30"/>
+                    
+                    <Label Content="Адрес" Grid.Row="0" Grid.Column="0" Margin="150 30 20 20"/>
+                    <TextBox Name="AddressTextBox" Width="150"  Grid.Row="0" Grid.Column="1" Margin="20 30 20 20"/>
+                    <Button Name="AddressButton" Content="Считать" Width="100" Grid.Row="0" Grid.Column="3" Margin="20 30 20 20"/>
+                    
+                    <Label Content="Значение" HorizontalAlignment="Left" Width="70" Grid.Column="0" Grid.Row="1" Margin="150 20 20 20"/>
+                    <TextBox Name="ValueToWrite" Grid.Column="1" Grid.Row="1" Margin="20"/>
+                    <Button Name="WriteButton" Click="WriteButton_Click" Content="Записать" Grid.Column="2" Grid.Row="1" Margin="20"/>
                 </Grid>
             </TabItem>
         </TabControl>
